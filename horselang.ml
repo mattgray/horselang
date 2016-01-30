@@ -4,9 +4,6 @@ let print_char = function
   | '\t'  -> "tab"
   | c     -> Printf.sprintf "%c" c
 
-let read (source, pos) = (String.get source pos, (source, pos + 1))
-let peek (source, pos) = String.get source pos
-
 let string_of_char = Printf.sprintf "%c"
 
 type token =
@@ -46,60 +43,45 @@ let operators = ['+'; '-'; '/'; '*'; '|']
 
 let rec read_token s =
   try
-    match read s with
-      | '/', s when (peek s = '*') -> read_comment s
-      | c, s when List.mem c whitespace -> read_token s
-      | c, s when List.mem c alpha -> read_identifier [string_of_char c] s
-      | c, s when List.mem c numeric -> read_numeric [string_of_char c] s
-      | c, s when List.mem c operators -> Operator c, s
-      | '"', s -> read_string [] s
-      | '=', s -> Assignment, s
-      | ';', s -> EndStatement, s
-      | c, s -> raise @@
-        Horselang_parse_error (Printf.sprintf "Unexpected %c" c)
-  with Invalid_argument _ -> (EOF, s)
+    match Stream.next s with
+      | '/' when (Stream.peek s = (Some '*')) -> read_comment s
+      | c when List.mem c whitespace -> read_token s
+      | c when List.mem c alpha -> read_identifier [string_of_char c] s
+      | c when List.mem c numeric -> read_numeric [string_of_char c] s
+      | c when List.mem c operators -> Operator c, s
+      | '"' -> read_string [] s
+      | '=' -> Assignment, s
+      | ';' -> EndStatement, s
+      | c -> raise @@ Horselang_parse_error (Printf.sprintf "Unexpected %c" c)
+  with Stream.Failure -> (EOF, s)
 and read_comment s =
   try
-    match read s with
-      | ('*', s) when peek s = '/' -> let (_, s) = read s in read_token s
-      | (_, s) -> read_comment s
-  with Invalid_argument _ -> (EOF, s)
+    match Stream.next s with
+      | '*' when Stream.peek s = (Some '/') -> let _ = Stream.next s in read_token s
+      | _ -> read_comment s
+  with Stream.Failure -> (EOF, s)
 and read_identifier ident s =
   try
-    match read s with
-      | (c, s) when List.mem c whitespace -> (Identifier (String.concat "" ident), s)
-      | (c, s) when List.mem c alpha -> read_identifier (List.append ident [string_of_char c]) s
-      | (c, (s, pos)) ->
-        raise (Horselang_parse_error (Printf.sprintf
-          "unexpected %c at position %d (%s)" c pos s))
-  with Invalid_argument _ -> (Identifier (String.concat "" ident), s)
+    match Stream.next s with
+      | c when List.mem c whitespace -> (Identifier (String.concat "" ident), s)
+      | c when List.mem c alpha -> read_identifier (List.append ident [string_of_char c]) s
+      | c -> raise @@ Horselang_parse_error "Unexpected identifier blah blah"
+  with Stream.Failure -> (Identifier (String.concat "" ident), s)
 and read_string thestring s =
   try
-    match read s with
-      | ('"', s) -> (String (String.concat "" thestring), s)
-      | (c, s) -> read_string (List.append thestring [string_of_char c]) s
-  with Invalid_argument _ -> raise @@ Horselang_parse_error "Unterminated string literal"
+    match Stream.next s with
+      | '"' -> (String (String.concat "" thestring), s)
+      | c -> read_string (List.append thestring [string_of_char c]) s
+  with Stream.Failure -> raise @@ Horselang_parse_error "Unterminated string literal"
 and read_numeric thenumberstring s =
   try
-    match read s with
-      | c, s when List.mem c numeric ->
+    match Stream.next s with
+      | c when List.mem c numeric ->
           read_numeric (List.append thenumberstring [string_of_char c]) s
-      | c, s when List.mem c whitespace ->
+      | c when List.mem c whitespace ->
           ((Number (float_of_string (String.concat "" thenumberstring))), s)
-      | (c, (s, pos)) ->
-        raise (Horselang_parse_error (Printf.sprintf
-          "unexpected %c in number literal at  %d (%s)" c pos s))
-  with Invalid_argument _ -> raise @@ Horselang_parse_error "Unterminated number literal"
-
-let file_read_all : in_channel -> string = fun chan ->
-  let lines = ref [] in
-  try
-    while true do
-      lines := input_line chan :: !lines
-    done; ""
-  with End_of_file ->
-    close_in chan;
-    String.concat "\n" (List.rev (!lines))
+      | c  -> raise @@ Horselang_parse_error "invalid number"
+  with Stream.Failure -> raise @@ Horselang_parse_error "Unterminated number literal"
 
 let get_tokens src =
   let rec get_tokens src tokens =
@@ -120,7 +102,7 @@ let debug_token = function
   | EOF -> "EOF"
 
 let () =
-  let src = (file_read_all stdin, 0) in
-  let tokens = get_tokens src in
+  let source = Stream.of_channel stdin in
+  let tokens = get_tokens source in
   List.iter (fun t -> print_endline (debug_token t)) tokens
 
