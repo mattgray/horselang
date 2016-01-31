@@ -1,11 +1,12 @@
-type t = (char * int * int) Stream.t
+type t = char Stream.t * int ref
 
-let of_char_stream s = Stream.from
-    (fun _ -> try Some (Stream.next s, 0, 0) with Stream.Failure -> None)
+let of_char_stream stream = (stream, ref 1)
 
-let next s = let c, _, _ = Stream.next s in c
+let next (stream, line) =
+  match Stream.next stream with
+    | '\n' -> line := !line + 1; '\n'
+    | c -> c
 
-let peek s =
-  match Stream.peek s with
-    | Some (c, _, _) -> Some c
-    | None -> None
+let peek (stream, _) = Stream.peek stream
+
+let get_line (_, line) = !line

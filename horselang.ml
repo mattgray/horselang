@@ -78,7 +78,9 @@ and read_numeric thenumberstring s =
           read_numeric (List.append thenumberstring [string_of_char c]) s
       | c when List.mem c whitespace ->
           Number (float_of_string (String.concat "" thenumberstring))
-      | c  -> raise @@ Horselang_parse_error "invalid number"
+      | c  -> raise @@
+        Horselang_parse_error (Printf.sprintf "invalid number at line %d"
+          (Scanner.get_line s))
   with Stream.Failure -> raise @@ Horselang_parse_error "Unterminated number literal"
 
 let get_tokens source =
@@ -97,5 +99,9 @@ let debug_token = function
 let () =
   let source = Scanner.of_char_stream (Stream.of_channel stdin) in
   let tokens = get_tokens source in
-  Stream.iter (fun t -> print_endline (debug_token t)) tokens
+  Stream.iter (
+    fun t -> 
+      print_string (debug_token t);
+      print_endline (Printf.sprintf " on line %d" (Scanner.get_line source))
+    ) tokens
 
