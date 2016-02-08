@@ -20,26 +20,15 @@ type token =
 exception Horselang_parse_error of string
 
 let whitespace = [ '\n'; '\t'; ' ' ]
-let gen_alpha () =
-  let alpha = ref [] in
-  for x = 97 to 122 do
-    alpha := List.append !alpha [Char.chr x]
-  done;
-  for x = 65 to 90 do
-    alpha := List.append !alpha [Char.chr x]
-  done;
-  !alpha
 
-let alpha = gen_alpha ()
+let range i j =
+  let rec aux n acc =
+    if n < i then acc else aux (n-1) (n :: acc)
+  in aux j []
 
-let gen_num () =
-  let num = ref [] in
-  for x = 48 to 57 do
-    num := List.append !num [Char.chr x]
-  done;
-  !num
+let alpha = List.map Char.chr (range 65 90) @ List.map Char.chr (range 97 122)
 
-let numeric = gen_num ()
+let numeric = List.map Char.chr (range 48 57)
 
 let operators = ['+'; '-'; '/'; '*'; '|']
 
