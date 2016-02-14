@@ -1,19 +1,9 @@
-/* PROGRAM NAME: nxx1.txt
+# Compute the x'th fibonacci number.
+def fib(x)
+  if x < 3 then
+    1
+  else
+    fib(x-1)+fib(x-2)
 
-nxx is a simple programming language that provides:
- numbers
- strings
- assignment statements
- string concatenation
- simple arithmetic operations
- print capability
- 
-comments may be enclosed in slash+asterisk .. asterisk+slash
-*/
-alpha = 1d6 ;
-beta = 2   ;
-resultName = "delta" ;
-delta = alpha / beta ;
-print "Value of " | resultName | " is: " ;
-print delta ;
-print "\n" ;
+# This expression will compute the 40th number.
+fib(40)
