@@ -9,7 +9,7 @@ let () =
   let source = Scanner.of_char_stream (Stream.of_channel stdin) in
   let tokens = get_tokens source in
   Stream.iter (
-    fun t -> 
+    fun t ->
       print_string (Lexer.debug_token t);
       print_endline (Printf.sprintf " on line %d" (Scanner.get_line source))
     ) tokens
