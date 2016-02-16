@@ -1,9 +1,3 @@
-type token =
-  Def | Extern
-  | Ident of string
-  | Number of float
-  | Kwd of char
-
 let range i j =
   let rec aux n acc =
     if n < i then acc else aux (n-1) (n :: acc)
@@ -23,7 +17,7 @@ let rec read_token s =
   | c when List.mem c whitespace -> read_token s (* skip over whitespace *)
   | c when List.mem c alpha -> read_identifier (buffer_from c) s
   | c when List.mem c numeric -> read_numeric (buffer_from c) s
-  | c -> Kwd c
+  | c -> Token.Kwd c
 and read_comment s =
   match Scanner.next s with
   | '\n' -> read_token s
@@ -33,21 +27,14 @@ and read_identifier buf s =
   | c when List.mem c alpha -> Buffer.add_char buf (Scanner.next s); read_identifier buf s
   | c when List.mem c whitespace ->
     (let _ = Scanner.next s in match (Buffer.contents buf) with
-    | "def" -> Def
-    | "extern" -> Extern
-    | ident -> Ident ident)
+    | "def" -> Token.Def
+    | "extern" -> Token.Extern
+    | ident -> Token.Ident ident)
   (* something else, just carry on, don't advance *)
-  | c -> Ident (Buffer.contents buf)
+  | c -> Token.Ident (Buffer.contents buf)
 and read_numeric buf s =
   match Scanner.peek s with
   | c when List.mem c numeric ->
     Buffer.add_char buf (Scanner.next s);
     read_numeric buf s
-  | _  -> Number (float_of_string (Buffer.contents buf))
-
-let debug_token = function
-  | Number f -> Printf.sprintf "Number %f" f
-  | Def -> "Def"
-  | Extern -> "Extern"
-  | Ident name -> Printf.sprintf "Identifier %s" name
-  | Kwd c -> Printf.sprintf "Kwd %c" c
+  | _  -> Token.Number (float_of_string (Buffer.contents buf))
