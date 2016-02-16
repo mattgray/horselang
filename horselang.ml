@@ -5,10 +5,24 @@ let get_tokens source =
 let rec main_loop tokens =
   match Stream.peek tokens with
   | None -> ()
+  | Some (Token.Kwd ';') ->
+    Stream.junk tokens;
+    main_loop tokens
   | Some token ->
-    ignore(Parser.parse_expr tokens);
-    print_endline "parsed an expression";
-    print_string "horselang> "; flush stdout;
+    begin
+      match token with
+      | Token.Def ->
+        ignore(Parser.parse_definition tokens);
+        print_endline "parsed a definition";
+      | Token.Extern ->
+        ignore(Parser.parse_extern tokens);
+        print_endline "parsed an extern";
+      | _ ->
+        ignore(Parser.parse_toplevel tokens);
+        print_endline "parsed a top level expression";
+    end;
+    print_string "horselang> ";
+    flush stdout;
     main_loop tokens
 
 let () =
