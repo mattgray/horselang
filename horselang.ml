@@ -12,15 +12,19 @@ let rec main_loop tokens =
     begin
       match token with
       | Token.Def ->
-        ignore(Parser.parse_definition tokens);
-        print_endline "parsed a definition";
+        let f = Parser.parse_definition tokens in
+        print_endline "a function:";
+        Ast.print_function f
       | Token.Extern ->
-        ignore(Parser.parse_extern tokens);
-        print_endline "parsed an extern";
+        let e = Parser.parse_extern tokens in
+        print_endline "an extern:";
+        Ast.print_prototype e
       | _ ->
-        ignore(Parser.parse_toplevel tokens);
-        print_endline "parsed a top level expression";
+        let f = Parser.parse_toplevel tokens in
+        print_endline "an expression:";
+        Ast.print_function f
     end;
+    print_newline ();
     print_string "horselang> ";
     flush stdout;
     main_loop tokens
