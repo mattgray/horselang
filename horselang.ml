@@ -1,3 +1,4 @@
+
 let get_tokens source =
   Stream.from
    (fun _ -> try Some (Lexer.read_token source) with Stream.Failure -> None)
@@ -14,15 +15,18 @@ let rec main_loop tokens =
       | Token.Def ->
         let f = Parser.parse_definition tokens in
         print_endline "a function:";
-        Ast.print_function f
+        Ast.print_function f;
+        Llvm.dump_value (Codegen.codegen_func f)
       | Token.Extern ->
         let e = Parser.parse_extern tokens in
         print_endline "an extern:";
-        Ast.print_prototype e
+        Ast.print_prototype e;
+        Llvm.dump_value (Codegen.codegen_proto e)
       | _ ->
         let f = Parser.parse_toplevel tokens in
         print_endline "an expression:";
-        Ast.print_function f
+        Ast.print_function f;
+        Llvm.dump_value (Codegen.codegen_func f)
     end;
     print_newline ();
     print_string "horselang> ";
