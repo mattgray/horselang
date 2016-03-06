@@ -87,4 +87,4 @@ let parse_extern tokens =
 
 let parse_toplevel tokens =
   let expr = parse_expr tokens in
-  Ast.Function (Ast.Prototype ("", [||]), expr)
+  Ast.Function (Ast.Prototype ("anon", [||]), expr)
